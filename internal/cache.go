@@ -93,8 +93,9 @@ func (cache *CacheHandler) Handler(caching Caching, next gin.HandlerFunc) gin.Ha
 			cache.doCacheEvict(ctx, c, caching.Evict...)
 		}
 		if doCache {
-			if cacheHeader, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
+			if _, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
 				s := c.Writer.(*pkg.ResponseBodyWriter).Body.String()
+				cacheHeader = c.Writer.Header()
 				cache.Cache.Set(ctx, key, cacheHeader, s, caching.Cacheable[0].CacheTime)
 			}
 		}
