@@ -2,9 +2,10 @@ package redis
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
 	"math"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type redisCache struct {

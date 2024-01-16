@@ -2,10 +2,12 @@ package memcache
 
 import (
 	"context"
-	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal/entity"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal/entity"
 )
 
 // memoryHandler is private
@@ -22,8 +24,8 @@ func NewMemoryHandler() *memoryHandler {
 	timer := time.NewTicker(time.Second * 30)
 
 	go func() {
-		select {
-		case <-timer.C:
+		for {
+			<-timer.C
 			memoryHandler.cacheStore.Range(func(key, value interface{}) bool {
 				item := value.(entity.CacheItem)
 				if item.ExpireAt.UnixNano() < time.Now().UnixNano() {
@@ -37,29 +39,31 @@ func NewMemoryHandler() *memoryHandler {
 	return memoryHandler
 }
 
-func (m *memoryHandler) Load(_ context.Context, key string) string {
+func (m *memoryHandler) Load(_ context.Context, key string) (http.Header, string) {
 	load, ok := m.cacheStore.Load(key)
 	if ok {
 		item := load.(entity.CacheItem)
 		if item.ExpireAt.UnixNano() < time.Now().UnixNano() {
 			m.cacheStore.Delete(key)
-			return ""
+			return nil, ""
 		}
-		return item.Value
+		return item.Header, item.Value
 	}
-	return ""
+	return nil, ""
 }
 
-func (m *memoryHandler) Set(_ context.Context, key string, data string, timeout time.Duration) {
+func (m *memoryHandler) Set(_ context.Context, key string, hdr http.Header, data string, timeout time.Duration) {
 	if timeout > 0 {
 		m.cacheStore.Store(key, entity.CacheItem{
 			Value:    data,
+			Header:   hdr,
 			CreateAt: time.Now(),
 			ExpireAt: time.Now().Add(timeout),
 		})
 	} else {
 		m.cacheStore.Store(key, entity.CacheItem{
 			Value:    data,
+			Header:   hdr,
 			CreateAt: time.Now(),
 			ExpireAt: time.Now().Add(time.Hour * 1000000),
 		})
@@ -71,7 +75,7 @@ func (m *memoryHandler) DoEvict(_ context.Context, keys []string) {
 	var evictKeys []string
 	for _, key := range keys {
 		isEndingStar := key[len(key)-1:]
-		m.cacheStore.Range(func(keyInMap, value interface{}) bool {
+		m.cacheStore.Range(func(keyInMap, _ interface{}) bool {
 			// match *
 			if isEndingStar == "*" {
 				if strings.Contains(keyInMap.(string), strings.ReplaceAll(key, "*", "")) {
