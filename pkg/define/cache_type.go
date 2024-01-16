@@ -1,15 +1,16 @@
 package define
 
 import (
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CacheHitHook startup on hit hook
 type CacheHitHook []func(c *gin.Context, cacheValue string)
 
 // GenKeyFunc startup on hit hook
-type GenKeyFunc func(params map[string]interface{}) string
+type GenKeyFunc func(c *gin.Context) string
 
 // CacheEvict do Evict
 type CacheEvict GenKeyFunc

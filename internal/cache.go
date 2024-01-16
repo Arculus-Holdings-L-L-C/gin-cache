@@ -3,14 +3,14 @@ package internal
 import (
 	"bytes"
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/pygzfei/gin-cache/internal/utils"
-	"github.com/pygzfei/gin-cache/pkg"
-	. "github.com/pygzfei/gin-cache/pkg/define"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pygzfei/gin-cache/pkg"
+	. "github.com/pygzfei/gin-cache/pkg/define"
 )
 
 var bodyBytesKey = "bodyIO"
@@ -55,12 +55,12 @@ func (cache *CacheHandler) Handler(caching Caching, next gin.HandlerFunc) gin.Ha
 		var cacheString = ""
 
 		if c.Request.Body != nil {
-			body, err := ioutil.ReadAll(c.Request.Body)
+			body, err := io.ReadAll(c.Request.Body)
 			if err != nil {
 				body = []byte("")
 			}
 			c.Set(bodyBytesKey, body)
-			c.Request.Body = ioutil.NopCloser(bytes.NewReader(body))
+			c.Request.Body = io.NopCloser(bytes.NewReader(body))
 		}
 
 		if doCache {
@@ -102,8 +102,7 @@ func (cache *CacheHandler) Handler(caching Caching, next gin.HandlerFunc) gin.Ha
 }
 
 func (cache *CacheHandler) getCacheKey(cacheable Cacheable, c *gin.Context) string {
-	params := utils.ParameterParser(c)
-	return strings.ToLower(cacheable.GenKey(params))
+	return strings.ToLower(cacheable.GenKey(c))
 }
 
 func (cache *CacheHandler) loadCache(ctx context.Context, key string) string {
@@ -116,9 +115,8 @@ func (cache *CacheHandler) setCache(ctx context.Context, key string, data string
 
 func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cacheEvicts ...CacheEvict) {
 	keys := make([]string, 0)
-	params := utils.ParameterParser(c)
 	for _, evict := range cacheEvicts {
-		s := evict(params)
+		s := evict(c)
 		if s != "" {
 			keys = append(keys, strings.ToLower(s))
 		}
@@ -153,7 +151,7 @@ func refreshBodyData(c *gin.Context) {
 	if c.Request.Body != nil {
 		bodyStr, exists := c.Get(bodyBytesKey)
 		if exists {
-			c.Request.Body = ioutil.NopCloser(bytes.NewReader(bodyStr.([]byte)))
+			c.Request.Body = io.NopCloser(bytes.NewReader(bodyStr.([]byte)))
 		}
 	}
 }

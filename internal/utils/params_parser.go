@@ -1,27 +1,12 @@
 package utils
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"net/http"
-	"net/url"
-	"strings"
 )
-
-func GetQuery(req *http.Request) map[string]interface{} {
-	m := make(map[string]interface{})
-
-	query, err := url.ParseQuery(req.URL.RawQuery)
-	if err != nil {
-		return m
-	}
-	if len(query) > 0 {
-		for key, strArr := range query {
-			m[key] = strings.Join(strArr, ",")
-		}
-	}
-	return m
-}
 
 func ParameterParser(c *gin.Context) map[string]interface{} {
 	m := make(map[string]interface{})
@@ -34,11 +19,9 @@ func ParameterParser(c *gin.Context) map[string]interface{} {
 		}
 	}
 	if c.Request.Method == http.MethodGet {
-
-		//整合query参数
-		queryParams := GetQuery(c.Request)
+		queryParams := c.Request.URL.Query()
 		for key, val := range queryParams {
-			m[key] = val
+			m[key] = strings.Join(val, ",")
 		}
 	} else if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut {
 		postMap := make(map[string]interface{})

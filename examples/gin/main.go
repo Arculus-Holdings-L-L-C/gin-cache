@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pygzfei/gin-cache/cmd/startup"
 	"github.com/pygzfei/gin-cache/pkg/define"
@@ -15,8 +16,8 @@ func main() {
 		define.Caching{
 			Cacheable: []define.Cacheable{
 				// params["id"] 是请求数据, 来自于query 或者 post data, 例如: `/?id=1`, 缓存将会生成为: `anson:id:1`
-				{GenKey: func(params map[string]interface{}) string {
-					return fmt.Sprintf("anson:id:%s", params["id"])
+				{GenKey: func(c *gin.Context) string {
+					return fmt.Sprintf("anson:id:%s", c.Query("id"))
 				}},
 			},
 		},
