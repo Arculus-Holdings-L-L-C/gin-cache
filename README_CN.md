@@ -1,7 +1,7 @@
-[![Release](https://img.shields.io/github/v/release/pygzfei/gin-cache.svg?style=flat-square)](https://github.com/pygzfei/gin-cache/releases)
-[![doc](https://img.shields.io/badge/go.dev-doc-007d9c?style=flat-square&logo=read-the-docs)](https://pkg.go.dev/github.com/pygzfei/gin-cache)
-[![Build Status](https://github.com/pygzfei/gin-cache/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/pygzfei/gin-cache/actions?query=branch%3Amaster)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pygzfei/gin-cache?branch=main)](https://goreportcard.com/report/github.com/pygzfei/gin-cache)
+[![Release](https://img.shields.io/github/v/release/pygzfei/gin-cache.svg?style=flat-square)](https://github.com/Arculus-Holdings-L-L-C/gin-cache/releases)
+[![doc](https://img.shields.io/badge/go.dev-doc-007d9c?style=flat-square&logo=read-the-docs)](https://pkg.go.dev/github.com/Arculus-Holdings-L-L-C/gin-cache)
+[![Build Status](https://github.com/Arculus-Holdings-L-L-C/gin-cache/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/Arculus-Holdings-L-L-C/gin-cache/actions?query=branch%3Amaster)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Arculus-Holdings-L-L-C/gin-cache?branch=main)](https://goreportcard.com/report/github.com/Arculus-Holdings-L-L-C/gin-cache)
 [![codecov](https://codecov.io/gh/pygzfei/gin-cache/branch/main/graph/badge.svg)](https://codecov.io/gh/pygzfei/gin-cache)
 ![](https://img.shields.io/badge/license-MIT-green)
 
@@ -14,7 +14,7 @@
 - [ ] more...
 ## 安装
 ```
-go get -u github.com/pygzfei/gin-cache
+go get -u github.com/Arculus-Holdings-L-L-C/gin-cache
 ```
 ## 快速开始
 ```go
@@ -22,8 +22,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/pygzfei/gin-cache/cmd/startup"
-	"github.com/pygzfei/gin-cache/pkg/define"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/cmd/startup"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"time"
 )
 

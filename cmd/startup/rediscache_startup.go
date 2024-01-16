@@ -2,10 +2,10 @@ package startup
 
 import (
 	"errors"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal"
+	rediscache "github.com/Arculus-Holdings-L-L-C/gin-cache/internal/drivers/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"github.com/pygzfei/gin-cache/internal"
-	rediscache "github.com/pygzfei/gin-cache/internal/drivers/redis"
 	"time"
 )
 

@@ -2,7 +2,7 @@ package memcache
 
 import (
 	"context"
-	"github.com/pygzfei/gin-cache/internal/entity"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal/entity"
 	"strings"
 	"sync"
 	"time"

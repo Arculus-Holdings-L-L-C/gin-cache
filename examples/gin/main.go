@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/cmd/startup"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"github.com/gin-gonic/gin"
-	"github.com/pygzfei/gin-cache/cmd/startup"
-	"github.com/pygzfei/gin-cache/pkg/define"
 )
 
 func main() {

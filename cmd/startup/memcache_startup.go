@@ -1,9 +1,9 @@
 package startup
 
 import (
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal/drivers/memcache"
 	"github.com/gin-gonic/gin"
-	"github.com/pygzfei/gin-cache/internal"
-	"github.com/pygzfei/gin-cache/internal/drivers/memcache"
 )
 
 // MemCache NewMemoryCache init memory support

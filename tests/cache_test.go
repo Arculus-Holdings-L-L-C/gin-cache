@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/cmd/startup"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"github.com/pygzfei/gin-cache/cmd/startup"
-	"github.com/pygzfei/gin-cache/internal"
-	"github.com/pygzfei/gin-cache/pkg/define"
 	"github.com/stretchr/testify/assert"
 )
 
