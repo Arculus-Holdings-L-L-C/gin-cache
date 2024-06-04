@@ -26,4 +26,7 @@ type Cacheable struct {
 type Caching struct {
 	Cacheable Cacheable
 	Evict     []CacheEvict
+
+	// CacheErrorCodes error codes allowed to cache
+	CacheErrorCodes []int
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -45,10 +46,8 @@ func New(c Cache, onCacheHit ...func(c *gin.Context, cacheValue string)) *CacheH
 // Handler for startup
 func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		doEvict := len(caching.Evict) > 0
 		ctx := context.Background()
-
 		var key, cacheString string
 		var cacheHeader http.Header
 
@@ -75,7 +74,8 @@ func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc)
 		if cacheString == "" {
 			refreshBodyData(c)
 			next(c)
-			if c.Writer.Status() != http.StatusOK {
+			if code := c.Writer.Status(); code != http.StatusOK &&
+				!slices.Contains(caching.CacheErrorCodes, code) {
 				return
 			}
 			refreshBodyData(c)
@@ -92,7 +92,6 @@ func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc)
 			cacheHeader = c.Writer.Header()
 			cache.Cache.Set(ctx, key, cacheHeader, s, caching.Cacheable.CacheTime)
 		}
-
 	}
 }
 
