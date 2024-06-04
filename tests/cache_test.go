@@ -31,20 +31,20 @@ const (
 func givingCacheOfHttpServer(timeout time.Duration, runFor RunFor, onHit ...func(c *gin.Context, cacheValue string)) (*gin.Engine, *internal.CacheHandler) {
 	var cache *internal.CacheHandler
 
-	if runFor == MemoryCache {
-		cache, _ = startup.MemCache(onHit...)
-	} else if runFor == RedisCache {
+	// if runFor == MemoryCache {
+	cache, _ = startup.MemCache(onHit...)
+	// } else if runFor == RedisCache {
 
-		// cache, _ = startup.RedisCache(
-		// 	timeout,
-		// 	&redis.Options{
-		// 		Addr:     "localhost:6379",
-		// 		Password: "",
-		// 		DB:       0,
-		// 	},
-		// 	onHit...,
-		// )
-	}
+	// cache, _ = startup.RedisCache(
+	// 	timeout,
+	// 	&redis.Options{
+	// 		Addr:     "localhost:6379",
+	// 		Password: "",
+	// 		DB:       0,
+	// 	},
+	// 	onHit...,
+	// )
+	// }
 
 	gin.ForceConsoleColor()
 	gin.SetMode(gin.TestMode)
@@ -52,11 +52,9 @@ func givingCacheOfHttpServer(timeout time.Duration, runFor RunFor, onHit ...func
 
 	r.GET("/ping", cache.Handler(
 		define.Caching{
-			Cacheable: []define.Cacheable{
-				{
-					GenKey: func(c *gin.Context) string {
-						return fmt.Sprintf("anson:userId:%v hash:%v", c.Query("id"), c.Query("hash"))
-					},
+			Cacheable: define.Cacheable{
+				GenKey: func(c *gin.Context) string {
+					return fmt.Sprintf("anson:userId:%v hash:%v", c.Query("id"), c.Query("hash"))
 				},
 			},
 		},
@@ -72,10 +70,10 @@ func givingCacheOfHttpServer(timeout time.Duration, runFor RunFor, onHit ...func
 
 	r.GET("/ping/:id/:hash", cache.Handler(
 		define.Caching{
-			Cacheable: []define.Cacheable{
-				{GenKey: func(c *gin.Context) string {
+			Cacheable: define.Cacheable{
+				GenKey: func(c *gin.Context) string {
 					return fmt.Sprintf("anson:userId:%v hash:%v", c.Param("id"), c.Param("hash"))
-				}},
+				},
 			},
 		},
 		func(c *gin.Context) {
@@ -256,13 +254,13 @@ func Test_Cache_CanStore_Hit_Hook(t *testing.T) {
 
 				r.GET("/pings", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{GenKey: func(c *gin.Context) string {
+						Cacheable: define.Cacheable{
+							GenKey: func(c *gin.Context) string {
 								return fmt.Sprintf("anson:userId:%s hash:%s", c.Query("id"), c.Query("hash"))
 							}, OnCacheHit: define.CacheHitHook{func(c *gin.Context, cacheValue string) {
 								// 这里会覆盖cache 实例的方法
 								assert.True(t, len(cacheValue) > 0)
-							}}},
+							}},
 						},
 					},
 					func(c *gin.Context) {
@@ -394,10 +392,10 @@ func Test_Cache_Fuzzy_Evict(t *testing.T) {
 
 				r.GET("/pings", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{GenKey: func(c *gin.Context) string {
+						Cacheable: define.Cacheable{
+							GenKey: func(c *gin.Context) string {
 								return fmt.Sprintf("anson:hash:%s", c.Query("hash"))
-							}},
+							},
 						},
 					},
 					func(c *gin.Context) {
@@ -477,16 +475,16 @@ func Test_Post_Method_Should_Be_Cache(t *testing.T) {
 
 				r.POST("/pings", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{
-								GenKey: func(c *gin.Context) string {
-									var json map[string]interface{}
-									c.BindJSON(&json)
-									return fmt.Sprintf("anson:hash:%s", json["hash"])
-								}, OnCacheHit: define.CacheHitHook{func(c *gin.Context, cacheValue string) {
-									// 这里会覆盖cache 实例的方法
-									assert.True(t, len(cacheValue) > 0)
-								}}},
+						Cacheable: define.Cacheable{
+
+							GenKey: func(c *gin.Context) string {
+								var json map[string]interface{}
+								c.BindJSON(&json)
+								return fmt.Sprintf("anson:hash:%s", json["hash"])
+							}, OnCacheHit: define.CacheHitHook{func(c *gin.Context, cacheValue string) {
+								// 这里会覆盖cache 实例的方法
+								assert.True(t, len(cacheValue) > 0)
+							}},
 						},
 					},
 					func(c *gin.Context) {
@@ -530,13 +528,13 @@ func Test_Post_Method_Should_Be_Evict_Old_Data_And_Cache_New_Data(t *testing.T) 
 
 				r.POST("/pings", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
+						Cacheable: define.Cacheable{
 							//{CacheName: "anson", Key: `hash:#hash#`},
-							{GenKey: func(c *gin.Context) string {
+							GenKey: func(c *gin.Context) string {
 								var json map[string]interface{}
 								c.BindJSON(&json)
 								return fmt.Sprintf("anson:hash:%s", json["hash"])
-							}},
+							},
 						},
 						Evict: []define.CacheEvict{
 							//{CacheName: []string{"anson"}, Key: `hash:#hash#`},
@@ -587,13 +585,13 @@ func Test_Post_Method_Should_Be_Evict(t *testing.T) {
 
 				r.GET("/ping_for_get", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{GenKey: func(c *gin.Context) string {
+						Cacheable: define.Cacheable{
+							GenKey: func(c *gin.Context) string {
 								return fmt.Sprintf("anson:hash:%s", c.Query("hash"))
 							}, OnCacheHit: define.CacheHitHook{func(c *gin.Context, cacheValue string) {
 								// 这里会覆盖cache 实例的方法
 								assert.True(t, len(cacheValue) > 0)
-							}}},
+							}},
 						},
 					},
 					func(c *gin.Context) {
@@ -657,15 +655,15 @@ func Test_Put_Method_Should_Be_Cache(t *testing.T) {
 
 				r.PUT("/pings", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{GenKey: func(c *gin.Context) string {
+						Cacheable: define.Cacheable{
+							GenKey: func(c *gin.Context) string {
 								json := make(map[string]interface{})
 								c.BindJSON(&json)
 								return fmt.Sprintf("anson:hash:%s", json["hash"])
 							}, OnCacheHit: define.CacheHitHook{func(c *gin.Context, cacheValue string) {
 								// 这里会覆盖cache 实例的方法
 								assert.True(t, len(cacheValue) > 0)
-							}}},
+							}},
 						},
 					},
 					func(c *gin.Context) {
@@ -720,10 +718,10 @@ func Test_Diff_Timeout_Cache_Evict(t *testing.T) {
 
 				r.GET("/ping_for_timeout", cache.Handler(
 					define.Caching{
-						Cacheable: []define.Cacheable{
-							{GenKey: func(c *gin.Context) string {
+						Cacheable: define.Cacheable{
+							GenKey: func(c *gin.Context) string {
 								return fmt.Sprintf("anson:id:%s&name=%s", item.Id, item.Hash)
-							}, CacheTime: time.Second},
+							}, CacheTime: time.Second,
 						},
 					},
 					func(c *gin.Context) {

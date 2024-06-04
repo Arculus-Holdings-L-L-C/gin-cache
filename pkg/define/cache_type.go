@@ -24,6 +24,6 @@ type Cacheable struct {
 
 // Caching mixins Cacheable and CacheEvict
 type Caching struct {
-	Cacheable []Cacheable
+	Cacheable Cacheable
 	Evict     []CacheEvict
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg"
-	. "github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +23,7 @@ type Cache interface {
 
 type CacheHandler struct {
 	Cache      Cache
-	OnCacheHit CacheHitHook // 命中缓存钩子 优先级低
+	OnCacheHit define.CacheHitHook // 命中缓存钩子 优先级低
 }
 
 func (cache *CacheHandler) Load(ctx context.Context, key string) (http.Header, string) {
@@ -43,16 +43,13 @@ func New(c Cache, onCacheHit ...func(c *gin.Context, cacheValue string)) *CacheH
 }
 
 // Handler for startup
-func (cache *CacheHandler) Handler(caching Caching, next gin.HandlerFunc) gin.HandlerFunc {
-
+func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		doCache := len(caching.Cacheable) > 0
 		doEvict := len(caching.Evict) > 0
 		ctx := context.Background()
 
-		var key = ""
-		var cacheString = ""
+		var key, cacheString string
 		var cacheHeader http.Header
 
 		if c.Request.Body != nil {
@@ -64,50 +61,46 @@ func (cache *CacheHandler) Handler(caching Caching, next gin.HandlerFunc) gin.Ha
 			c.Request.Body = io.NopCloser(bytes.NewReader(body))
 		}
 
-		if doCache {
-			// pointer 指向 writer, 重写 c.writer
-			c.Writer = &pkg.ResponseBodyWriter{
-				Body:           bytes.NewBufferString(""),
-				ResponseWriter: c.Writer,
-			}
+		// pointer 指向 writer, 重写 c.writer
+		c.Writer = &pkg.ResponseBodyWriter{
+			Body:           bytes.NewBufferString(""),
+			ResponseWriter: c.Writer,
+		}
 
-			key = cache.getCacheKey(caching.Cacheable[0], c)
-			if key != "" {
-				cacheHeader, cacheString = cache.Cache.Load(ctx, key)
-			}
+		key = cache.getCacheKey(caching.Cacheable, c)
+		if key != "" {
+			cacheHeader, cacheString = cache.Cache.Load(ctx, key)
 		}
 
 		if cacheString == "" {
-
 			refreshBodyData(c)
-
 			next(c)
-
+			if c.Writer.Status() != http.StatusOK {
+				return
+			}
 			refreshBodyData(c)
-
 		} else {
 			cache.doCacheHit(c, caching, cacheHeader, cacheString)
 		}
+
 		if doEvict {
-			refreshBodyData(c)
 			cache.doCacheEvict(ctx, c, caching.Evict...)
 		}
-		if doCache {
-			if _, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
-				s := c.Writer.(*pkg.ResponseBodyWriter).Body.String()
-				cacheHeader = c.Writer.Header()
-				cache.Cache.Set(ctx, key, cacheHeader, s, caching.Cacheable[0].CacheTime)
-			}
+
+		if _, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
+			s := c.Writer.(*pkg.ResponseBodyWriter).Body.String()
+			cacheHeader = c.Writer.Header()
+			cache.Cache.Set(ctx, key, cacheHeader, s, caching.Cacheable.CacheTime)
 		}
 
 	}
 }
 
-func (cache *CacheHandler) getCacheKey(cacheable Cacheable, c *gin.Context) string {
+func (cache *CacheHandler) getCacheKey(cacheable define.Cacheable, c *gin.Context) string {
 	return strings.ToLower(cacheable.GenKey(c))
 }
 
-func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cacheEvicts ...CacheEvict) {
+func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cacheEvicts ...define.CacheEvict) {
 	keys := make([]string, 0)
 	for _, evict := range cacheEvicts {
 		s := evict(c)
@@ -121,10 +114,10 @@ func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cac
 	}
 }
 
-func (cache *CacheHandler) doCacheHit(ctx *gin.Context, caching Caching, cacheHeader http.Header, cacheValue string) {
+func (cache *CacheHandler) doCacheHit(ctx *gin.Context, caching define.Caching, cacheHeader http.Header, cacheValue string) {
 
-	if len(caching.Cacheable[0].OnCacheHit) > 0 {
-		caching.Cacheable[0].OnCacheHit[0](ctx, cacheValue)
+	if caching.Cacheable.OnCacheHit != nil {
+		caching.Cacheable.OnCacheHit[0](ctx, cacheValue)
 		ctx.Abort()
 		return
 	}

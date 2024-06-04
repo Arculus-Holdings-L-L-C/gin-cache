@@ -14,11 +14,11 @@ func main() {
 
 	r.GET("/ping", cache.Handler(
 		define.Caching{
-			Cacheable: []define.Cacheable{
+			Cacheable: define.Cacheable{
 				// params["id"] 是请求数据, 来自于query 或者 post data, 例如: `/?id=1`, 缓存将会生成为: `anson:id:1`
-				{GenKey: func(c *gin.Context) string {
+				GenKey: func(c *gin.Context) string {
 					return fmt.Sprintf("anson:id:%s", c.Query("id"))
-				}},
+				},
 			},
 		},
 		func(c *gin.Context) {
