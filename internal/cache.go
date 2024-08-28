@@ -17,8 +17,8 @@ import (
 var bodyBytesKey = "bodyIO"
 
 type Cache interface {
-	Load(ctx context.Context, key string) (http.Header, string)
-	Set(ctx context.Context, key string, hdr http.Header, data string, timeout time.Duration)
+	Load(ctx context.Context, key string) define.Response
+	Set(ctx context.Context, key string, rsp define.Response, timeout time.Duration)
 	DoEvict(ctx context.Context, keys []string)
 }
 
@@ -27,12 +27,12 @@ type CacheHandler struct {
 	OnCacheHit []define.OnCacheHit // 命中缓存钩子 优先级低
 }
 
-func (cache *CacheHandler) Load(ctx context.Context, key string) (http.Header, string) {
+func (cache *CacheHandler) Load(ctx context.Context, key string) define.Response {
 	return cache.Cache.Load(ctx, key)
 }
 
-func (cache *CacheHandler) Set(ctx context.Context, key string, hdr http.Header, data string, timeout time.Duration) {
-	cache.Cache.Set(ctx, key, hdr, data, timeout)
+func (cache *CacheHandler) Set(ctx context.Context, key string, rsp define.Response, timeout time.Duration) {
+	cache.Cache.Set(ctx, key, rsp, timeout)
 }
 
 func (cache *CacheHandler) DoEvict(ctx context.Context, keys []string) {
@@ -48,8 +48,8 @@ func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) 
 	return func(c *gin.Context) {
 		doEvict := len(config.Evict) > 0
 		ctx := context.Background()
-		var key, cacheString string
-		var cacheHeader http.Header
+		var key string
+		var cacheRsp define.Response
 
 		if c.Request.Body != nil {
 			body, err := io.ReadAll(c.Request.Body)
@@ -68,10 +68,10 @@ func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) 
 
 		key = cache.getCacheKey(config.Cacheable, c)
 		if key != "" {
-			cacheHeader, cacheString = cache.Cache.Load(ctx, key)
+			cacheRsp = cache.Cache.Load(ctx, key)
 		}
 
-		if cacheString == "" {
+		if cacheRsp.Body == "" {
 			refreshBodyData(c)
 			next(c)
 			if code := c.Writer.Status(); code != http.StatusOK &&
@@ -80,21 +80,18 @@ func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) 
 			}
 			refreshBodyData(c)
 		} else {
-			cache.doCacheHit(c, config, define.Response{
-				Status: c.Writer.Status(),
-				Header: cacheHeader,
-				Body:   cacheString,
-			})
+			cache.doCacheHit(c, config, cacheRsp)
 		}
 
 		if doEvict {
 			cache.doCacheEvict(ctx, c, config.Evict...)
 		}
 
-		if _, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
-			s := c.Writer.(*pkg.ResponseBodyWriter).Body.String()
-			cacheHeader = c.Writer.Header()
-			cache.Cache.Set(ctx, key, cacheHeader, s, config.Cacheable.CacheTime)
+		if cacheRsp = cache.Cache.Load(ctx, key); cacheRsp.Body == "" {
+			cacheRsp.Body = c.Writer.(*pkg.ResponseBodyWriter).Body.String()
+			cacheRsp.Header = c.Writer.Header()
+			cacheRsp.Status = c.Writer.Status()
+			cache.Cache.Set(ctx, key, cacheRsp, config.Cacheable.CacheTime)
 		}
 	}
 }
