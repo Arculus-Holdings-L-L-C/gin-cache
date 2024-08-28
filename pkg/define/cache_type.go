@@ -1,13 +1,13 @@
 package define
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// CacheHitHook startup on hit hook
-type CacheHitHook []func(c *gin.Context, cacheValue string)
+type OnCacheHit func(c *gin.Context, r Response)
 
 // GenKeyFunc startup on hit hook
 type GenKeyFunc func(c *gin.Context) string
@@ -19,7 +19,7 @@ type CacheEvict GenKeyFunc
 type Cacheable struct {
 	GenKey     GenKeyFunc
 	CacheTime  time.Duration
-	OnCacheHit CacheHitHook // 命中缓存钩子 优先级最高, 可覆盖Caching的OnCacheHitting
+	OnCacheHit []OnCacheHit
 }
 
 // Caching mixins Cacheable and CacheEvict
@@ -29,4 +29,10 @@ type Caching struct {
 
 	// CacheErrorCodes error codes allowed to cache
 	CacheErrorCodes []int
+}
+
+type Response struct {
+	Status int
+	Header http.Header
+	Body   string
 }

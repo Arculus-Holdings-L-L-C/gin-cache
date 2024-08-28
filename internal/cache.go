@@ -24,7 +24,7 @@ type Cache interface {
 
 type CacheHandler struct {
 	Cache      Cache
-	OnCacheHit define.CacheHitHook // 命中缓存钩子 优先级低
+	OnCacheHit []define.OnCacheHit // 命中缓存钩子 优先级低
 }
 
 func (cache *CacheHandler) Load(ctx context.Context, key string) (http.Header, string) {
@@ -39,14 +39,14 @@ func (cache *CacheHandler) DoEvict(ctx context.Context, keys []string) {
 	cache.Cache.DoEvict(ctx, keys)
 }
 
-func New(c Cache, onCacheHit ...func(c *gin.Context, cacheValue string)) *CacheHandler {
+func New(c Cache, onCacheHit ...define.OnCacheHit) *CacheHandler {
 	return &CacheHandler{c, onCacheHit}
 }
 
 // Handler for startup
-func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
+func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		doEvict := len(caching.Evict) > 0
+		doEvict := len(config.Evict) > 0
 		ctx := context.Background()
 		var key, cacheString string
 		var cacheHeader http.Header
@@ -66,7 +66,7 @@ func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc)
 			ResponseWriter: c.Writer,
 		}
 
-		key = cache.getCacheKey(caching.Cacheable, c)
+		key = cache.getCacheKey(config.Cacheable, c)
 		if key != "" {
 			cacheHeader, cacheString = cache.Cache.Load(ctx, key)
 		}
@@ -75,22 +75,26 @@ func (cache *CacheHandler) Handler(caching define.Caching, next gin.HandlerFunc)
 			refreshBodyData(c)
 			next(c)
 			if code := c.Writer.Status(); code != http.StatusOK &&
-				!slices.Contains(caching.CacheErrorCodes, code) {
+				!slices.Contains(config.CacheErrorCodes, code) {
 				return
 			}
 			refreshBodyData(c)
 		} else {
-			cache.doCacheHit(c, caching, cacheHeader, cacheString)
+			cache.doCacheHit(c, config, define.Response{
+				Status: c.Writer.Status(),
+				Header: cacheHeader,
+				Body:   cacheString,
+			})
 		}
 
 		if doEvict {
-			cache.doCacheEvict(ctx, c, caching.Evict...)
+			cache.doCacheEvict(ctx, c, config.Evict...)
 		}
 
 		if _, cacheString = cache.Cache.Load(ctx, key); cacheString == "" {
 			s := c.Writer.(*pkg.ResponseBodyWriter).Body.String()
 			cacheHeader = c.Writer.Header()
-			cache.Cache.Set(ctx, key, cacheHeader, s, caching.Cacheable.CacheTime)
+			cache.Cache.Set(ctx, key, cacheHeader, s, config.Cacheable.CacheTime)
 		}
 	}
 }
@@ -113,30 +117,29 @@ func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cac
 	}
 }
 
-func (cache *CacheHandler) doCacheHit(ctx *gin.Context, caching define.Caching, cacheHeader http.Header, cacheValue string) {
-
-	if caching.Cacheable.OnCacheHit != nil {
-		caching.Cacheable.OnCacheHit[0](ctx, cacheValue)
-		ctx.Abort()
+func (cache *CacheHandler) doCacheHit(c *gin.Context, config define.Caching, r define.Response) {
+	if config.Cacheable.OnCacheHit != nil {
+		config.Cacheable.OnCacheHit[0](c, r)
+		c.Abort()
 		return
 	}
 
 	if len(cache.OnCacheHit) > 0 {
-		cache.OnCacheHit[0](ctx, cacheValue)
-		ctx.Abort()
+		cache.OnCacheHit[0](c, r)
+		c.Abort()
 		return
 	}
 
-	for key, values := range cacheHeader {
+	for key, values := range r.Header {
 		for _, value := range values {
-			ctx.Writer.Header().Add(key, value)
+			c.Writer.Header().Add(key, value)
 		}
 	}
-	if ctx.Writer.Header().Get("Content-Type") == "" {
-		ctx.Writer.Header().Set("Content-Type", "application/json; Charset=utf-8")
+	if c.Writer.Header().Get("Content-Type") == "" {
+		c.Writer.Header().Set("Content-Type", "application/json; Charset=utf-8")
 	}
-	ctx.String(http.StatusOK, cacheValue)
-	ctx.Abort()
+	c.String(r.Status, r.Body)
+	c.Abort()
 }
 
 func refreshBodyData(c *gin.Context) {

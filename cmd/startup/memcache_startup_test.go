@@ -1,14 +1,15 @@
 package startup
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMemCache(t *testing.T) {
 	type args struct {
-		onCacheHit []func(c *gin.Context, cacheValue string)
+		onCacheHit []define.OnCacheHit
 	}
 	tests := []struct {
 		name    string
