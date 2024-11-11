@@ -10,10 +10,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func MemCache(onCacheHit ...define.OnCacheHit) (*cache.CacheHandler, error) {
+func MemCache(onCacheHit ...define.OnCacheHit) (*cache.Handler, error) {
 	return cache.New(memcache.NewMemoryHandler(), onCacheHit...), nil
 }
 
-func RedisCache(client *redis.Client, cacheTime time.Duration, onCacheHit ...define.OnCacheHit) (*cache.CacheHandler, error) {
+func RedisCache(client *redis.Client, cacheTime time.Duration, onCacheHit ...define.OnCacheHit) (*cache.Handler, error) {
 	return cache.New(rediscache.NewRedisHandler(client, cacheTime), onCacheHit...), nil
 }

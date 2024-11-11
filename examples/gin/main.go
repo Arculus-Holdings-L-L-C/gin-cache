@@ -12,7 +12,7 @@ func main() {
 	cache, _ := startup.MemCache()
 	r := gin.Default()
 
-	r.GET("/ping", cache.Handler(
+	r.GET("/ping", cache.Func(
 		define.Caching{
 			Cacheable: define.Cacheable{
 				// params["id"] 是请求数据, 来自于query 或者 post data, 例如: `/?id=1`, 缓存将会生成为: `anson:id:1`

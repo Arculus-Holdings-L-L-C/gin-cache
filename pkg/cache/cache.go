@@ -22,29 +22,29 @@ type Cache interface {
 	DoEvict(ctx context.Context, keys []string)
 }
 
-type CacheHandler struct {
+type Handler struct {
 	Cache      Cache
 	OnCacheHit []define.OnCacheHit // 命中缓存钩子 优先级低
 }
 
-func (cache *CacheHandler) Load(ctx context.Context, key string) define.Response {
+func (cache *Handler) Load(ctx context.Context, key string) define.Response {
 	return cache.Cache.Load(ctx, key)
 }
 
-func (cache *CacheHandler) Set(ctx context.Context, key string, rsp define.Response, timeout time.Duration) {
+func (cache *Handler) Set(ctx context.Context, key string, rsp define.Response, timeout time.Duration) {
 	cache.Cache.Set(ctx, key, rsp, timeout)
 }
 
-func (cache *CacheHandler) DoEvict(ctx context.Context, keys []string) {
+func (cache *Handler) DoEvict(ctx context.Context, keys []string) {
 	cache.Cache.DoEvict(ctx, keys)
 }
 
-func New(c Cache, onCacheHit ...define.OnCacheHit) *CacheHandler {
-	return &CacheHandler{c, onCacheHit}
+func New(c Cache, onCacheHit ...define.OnCacheHit) *Handler {
+	return &Handler{c, onCacheHit}
 }
 
-// Handler for startup
-func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
+// Func returns the gin handler function.
+func (cache *Handler) Func(config define.Caching, next gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		doEvict := len(config.Evict) > 0
 		ctx := context.Background()
@@ -96,11 +96,11 @@ func (cache *CacheHandler) Handler(config define.Caching, next gin.HandlerFunc) 
 	}
 }
 
-func (cache *CacheHandler) getCacheKey(cacheable define.Cacheable, c *gin.Context) string {
+func (cache *Handler) getCacheKey(cacheable define.Cacheable, c *gin.Context) string {
 	return strings.ToLower(cacheable.GenKey(c))
 }
 
-func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cacheEvicts ...define.CacheEvict) {
+func (cache *Handler) doCacheEvict(ctx context.Context, c *gin.Context, cacheEvicts ...define.CacheEvict) {
 	keys := make([]string, 0)
 	for _, evict := range cacheEvicts {
 		s := evict(c)
@@ -114,7 +114,7 @@ func (cache *CacheHandler) doCacheEvict(ctx context.Context, c *gin.Context, cac
 	}
 }
 
-func (cache *CacheHandler) doCacheHit(c *gin.Context, config define.Caching, r define.Response) {
+func (cache *Handler) doCacheHit(c *gin.Context, config define.Caching, r define.Response) {
 	if config.Cacheable.OnCacheHit != nil {
 		config.Cacheable.OnCacheHit[0](c, r)
 		c.Abort()
