@@ -12,12 +12,11 @@ import (
 
 type redisCache struct {
 	cacheStore *redis.Client
-	cacheTime  time.Duration
 }
 
 // NewRedisHandler do new Redis startup object
-func NewRedisHandler(client *redis.Client, cacheTime time.Duration) *redisCache {
-	return &redisCache{cacheStore: client, cacheTime: cacheTime}
+func NewRedisHandler(client *redis.Client) *redisCache {
+	return &redisCache{cacheStore: client}
 }
 
 func (r *redisCache) Load(ctx context.Context, key string) define.Response {
@@ -42,7 +41,7 @@ func (r *redisCache) Set(ctx context.Context, key string, data define.Response, 
 	if timeout > 0 {
 		r.cacheStore.Set(ctx, key, string(jsonData), timeout)
 	} else {
-		r.cacheStore.Set(ctx, key, string(jsonData), r.cacheTime)
+		r.cacheStore.Set(ctx, key, string(jsonData), 24*time.Hour)
 	}
 }
 

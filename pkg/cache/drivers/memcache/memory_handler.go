@@ -63,7 +63,7 @@ func (m *memoryHandler) Set(_ context.Context, key string, rsp define.Response, 
 		m.cacheStore.Store(key, entity.CacheItem{
 			Rsp:      rsp,
 			CreateAt: time.Now(),
-			ExpireAt: time.Now().Add(time.Hour * 1000000),
+			ExpireAt: time.Now().Add(24 * time.Hour),
 		})
 	}
 

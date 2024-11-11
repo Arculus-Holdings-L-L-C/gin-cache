@@ -1,8 +1,9 @@
-package startup
+package startup_test
 
 import (
 	"testing"
 
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/cmd/startup"
 	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +22,7 @@ func TestMemCache(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MemCache(tt.args.onCacheHit...)
+			got, err := startup.MemCache(tt.args.onCacheHit...)
 			if err != nil {
 				assert.Error(t, err)
 				return
