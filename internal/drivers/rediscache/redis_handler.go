@@ -1,10 +1,12 @@
-package redis
+package rediscache
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"time"
 
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -18,15 +20,29 @@ func NewRedisHandler(client *redis.Client, cacheTime time.Duration) *redisCache 
 	return &redisCache{cacheStore: client, cacheTime: cacheTime}
 }
 
-func (r *redisCache) Load(ctx context.Context, key string) string {
-	return r.cacheStore.Get(ctx, key).Val()
+func (r *redisCache) Load(ctx context.Context, key string) define.Response {
+	val := r.cacheStore.Get(ctx, key).Val()
+	if val == "" {
+		return define.Response{}
+	}
+
+	var response define.Response
+	if err := json.Unmarshal([]byte(val), &response); err != nil {
+		return define.Response{}
+	}
+	return response
 }
 
-func (r *redisCache) Set(ctx context.Context, key string, data string, timeout time.Duration) {
+func (r *redisCache) Set(ctx context.Context, key string, data define.Response, timeout time.Duration) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+
 	if timeout > 0 {
-		r.cacheStore.Set(ctx, key, data, timeout)
+		r.cacheStore.Set(ctx, key, string(jsonData), timeout)
 	} else {
-		r.cacheStore.Set(ctx, key, data, r.cacheTime)
+		r.cacheStore.Set(ctx, key, string(jsonData), r.cacheTime)
 	}
 }
 
