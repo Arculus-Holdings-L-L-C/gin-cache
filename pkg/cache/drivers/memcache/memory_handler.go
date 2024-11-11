@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Arculus-Holdings-L-L-C/gin-cache/internal/entity"
+	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/cache/entity"
 	"github.com/Arculus-Holdings-L-L-C/gin-cache/pkg/define"
 )
 
